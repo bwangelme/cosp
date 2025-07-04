@@ -69,7 +69,23 @@ go install github.com/bwangelme/cosp@latest
 
 ## 使用方法
 
-### 1. 上传本地图片文件
+### 1. 查看版本信息
+
+```bash
+cosp version
+```
+
+输出示例：
+```
+COSP - 腾讯云 COS 图片上传工具
+Version: 1.0.0
+Build Time: 2024-01-15T10:30:00Z
+Git Commit: abc1234
+Go Version: go1.21.0
+OS/Arch: darwin/arm64
+```
+
+### 2. 上传本地图片文件
 
 ```bash
 cosp upload /path/to/image.jpg
@@ -77,7 +93,7 @@ cosp upload /path/to/image.jpg
 
 支持的图片格式：PNG、JPEG、GIF、BMP、TIFF 等
 
-### 2. 上传剪切板中的图片
+### 3. 上传剪切板中的图片
 
 ```bash
 cosp paste
@@ -89,7 +105,7 @@ cosp paste
 - **Linux**: 需要安装 `xclip`，使用 `xclip -selection clipboard -t image/png < image.png` 复制图片
 - **Windows**: 支持 base64 文本方式
 
-### 3. 列出 COS 中的文件
+### 4. 列出 COS 中的文件
 
 ```bash
 # 列出前 20 个文件
@@ -108,7 +124,7 @@ cosp list --marker file.txt
 cosp list --marker 10
 ```
 
-### 4. 删除文件
+### 5. 删除文件
 
 ```bash
 # 删除单个文件
@@ -204,7 +220,64 @@ cosp upload --help
 cosp paste --help
 cosp list --help
 cosp delete --help
+cosp version --help
 ```
+
+## 构建与开发
+
+### 本地构建
+
+```bash
+# 基本构建
+make build
+
+# 构建所有平台
+make build-all
+
+# 创建发布包
+make release-local
+
+# 查看版本信息
+make version
+
+# 查看所有可用命令
+make help
+```
+
+### 版本管理
+
+版本信息定义在 `version.go` 文件中：
+
+```go
+// Version 版本信息
+const Version = "1.0.0"
+```
+
+构建时会自动注入以下信息：
+- 构建时间
+- Git 提交哈希
+- Go 版本
+- 操作系统和架构
+
+### 自动发布
+
+项目配置了 GitHub Actions 自动发布功能：
+
+1. **触发条件**: 推送到 `master` 分支
+2. **版本检测**: 自动从 `version.go` 读取版本号
+3. **构建**: 自动构建多平台二进制文件
+4. **发布**: 创建 GitHub Release 并上传构建文件
+
+支持的平台：
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64, arm64)
+
+### 发布新版本
+
+1. 修改 `version.go` 中的版本号
+2. 提交并推送到 `master` 分支
+3. GitHub Actions 自动构建并发布新版本
 
 ## 常见问题
 

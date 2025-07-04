@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Get version from version.go
+      id: get_version
+      run: |
+        VERSION=$(grep 'const Version = ' version.go | sed 's/.*"\(.*\)".*/\1/')
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Version: ${VERSION}"
+
+    - name: Check if tag exists
+      id: check_tag
+      run: |
+        if git tag -l "v${{ steps.get_version.outputs.version }}" | grep -q "v${{ steps.get_version.outputs.version }}"; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build binaries
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        mkdir -p dist
+        
+        # 获取构建信息
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        GIT_COMMIT=$(git rev-parse --short HEAD)
+        
+        # 构建不同平台的二进制文件
+        platforms=(
+          "linux/amd64"
+          "linux/arm64"
+          "darwin/amd64"
+          "darwin/arm64"
+          "windows/amd64"
+          "windows/arm64"
+        )
+        
+        for platform in "${platforms[@]}"; do
+          IFS='/' read -r os arch <<< "$platform"
+          output_name="cosp-v${{ steps.get_version.outputs.version }}-${os}-${arch}"
+          
+          if [ "$os" = "windows" ]; then
+            output_name="${output_name}.exe"
+          fi
+          
+          echo "Building for $os/$arch..."
+          CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build \
+            -ldflags "-s -w -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}" \
+            -o "dist/${output_name}" .
+        done
+        
+        # 创建校验和文件
+        cd dist
+        sha256sum * > checksums.txt
+        cd ..
+
+    - name: Create Release
+      if: steps.check_tag.outputs.exists == 'false'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.get_version.outputs.version }}
+        release_name: Release v${{ steps.get_version.outputs.version }}
+        body: |
+          ## COSP v${{ steps.get_version.outputs.version }}
+          
+          ### 📦 下载
+          
+          选择适合您操作系统的二进制文件：
+          
+          - **Linux**: `cosp-v${{ steps.get_version.outputs.version }}-linux-amd64` (x86_64) 或 `cosp-v${{ steps.get_version.outputs.version }}-linux-arm64` (ARM64)
+          - **macOS**: `cosp-v${{ steps.get_version.outputs.version }}-darwin-amd64` (Intel) 或 `cosp-v${{ steps.get_version.outputs.version }}-darwin-arm64` (Apple Silicon)
+          - **Windows**: `cosp-v${{ steps.get_version.outputs.version }}-windows-amd64.exe` (x86_64) 或 `cosp-v${{ steps.get_version.outputs.version }}-windows-arm64.exe` (ARM64)
+          
+          ### 🔐 安全性
+          
+          所有二进制文件的 SHA256 校验和都包含在 `checksums.txt` 文件中。
+          
+          ### 📋 更新内容
+          
+          - 自动构建发布
+          - 支持多平台二进制文件
+          - 包含构建时间和 Git 提交信息
+          
+          ### 🚀 使用方法
+          
+          1. 下载适合您平台的二进制文件
+          2. 重命名为 `cosp`（Linux/macOS）或 `cosp.exe`（Windows）
+          3. 添加到系统 PATH 中
+          4. 运行 `cosp version` 查看版本信息
+          
+          完整的使用说明请参考 [README.md](https://github.com/bwangelme/cosp/blob/master/README.md)
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        for file in dist/*; do
+          if [ -f "$file" ]; then
+            echo "Uploading $file..."
+            gh release upload v${{ steps.get_version.outputs.version }} "$file" --clobber
+          fi
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test version command
+      run: |
+        go run . version 

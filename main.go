@@ -29,10 +29,21 @@ func main() {
   cosp delete file.jpg    # 删除指定文件`,
 	}
 
+	// 添加版本命令
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "显示版本信息",
+		Long:  "显示 COSP 工具的版本信息，包括版本号、构建时间、Git提交哈希等",
+		Run: func(cmd *cobra.Command, args []string) {
+			PrintVersion()
+		},
+	}
+
 	rootCmd.AddCommand(cmd.PasteCmd)
 	rootCmd.AddCommand(cmd.UploadCmd)
 	rootCmd.AddCommand(cmd.ListCmd)
 	rootCmd.AddCommand(cmd.DeleteCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
