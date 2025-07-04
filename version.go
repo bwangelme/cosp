@@ -6,7 +6,7 @@ import (
 )
 
 // Version 版本信息
-const Version = "1.0.0"
+const Version = "1.0.1"
 
 // BuildTime 构建时间，会在编译时通过 -ldflags 注入
 var BuildTime = "unknown"
