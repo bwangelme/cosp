@@ -6,11 +6,23 @@ on:
   pull_request:
     branches: [ "master" ]
 
+# 设置必要的权限
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    # 为这个job设置权限
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     
     steps:
     - uses: actions/checkout@v4
@@ -76,12 +88,11 @@ jobs:
         sha256sum * > checksums.txt
         cd ..
 
-    - name: Create Release
+    - name: Create Release Notes
       if: steps.check_tag.outputs.exists == 'false'
       run: |
-        gh release create v${{ steps.get_version.outputs.version }} \
-          --title "Release v${{ steps.get_version.outputs.version }}" \
-          --notes "## COSP v${{ steps.get_version.outputs.version }}
+        cat > release_notes.md << EOF
+        ## COSP v${{ steps.get_version.outputs.version }}
 
         ### 📦 下载
 
@@ -108,14 +119,26 @@ jobs:
         3. 添加到系统 PATH 中
         4. 运行 \`cosp version\` 查看版本信息
 
-        完整的使用说明请参考 [README.md](https://github.com/bwangelme/cosp/blob/master/README.md)" \
+        完整的使用说明请参考 [README.md](https://github.com/bwangelme/cosp/blob/master/README.md)
+        EOF
+
+    - name: Create Release
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        gh release create v${{ steps.get_version.outputs.version }} \
+          --title "Release v${{ steps.get_version.outputs.version }}" \
+          --notes-file release_notes.md \
           dist/*
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    
+    # 测试job不需要特殊权限，使用默认的read权限
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
