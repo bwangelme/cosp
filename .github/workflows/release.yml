@@ -78,54 +78,38 @@ jobs:
 
     - name: Create Release
       if: steps.check_tag.outputs.exists == 'false'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ steps.get_version.outputs.version }}
-        release_name: Release v${{ steps.get_version.outputs.version }}
-        body: |
-          ## COSP v${{ steps.get_version.outputs.version }}
-          
-          ### 📦 下载
-          
-          选择适合您操作系统的二进制文件：
-          
-          - **Linux**: `cosp-v${{ steps.get_version.outputs.version }}-linux-amd64` (x86_64) 或 `cosp-v${{ steps.get_version.outputs.version }}-linux-arm64` (ARM64)
-          - **macOS**: `cosp-v${{ steps.get_version.outputs.version }}-darwin-amd64` (Intel) 或 `cosp-v${{ steps.get_version.outputs.version }}-darwin-arm64` (Apple Silicon)
-          - **Windows**: `cosp-v${{ steps.get_version.outputs.version }}-windows-amd64.exe` (x86_64) 或 `cosp-v${{ steps.get_version.outputs.version }}-windows-arm64.exe` (ARM64)
-          
-          ### 🔐 安全性
-          
-          所有二进制文件的 SHA256 校验和都包含在 `checksums.txt` 文件中。
-          
-          ### 📋 更新内容
-          
-          - 自动构建发布
-          - 支持多平台二进制文件
-          - 包含构建时间和 Git 提交信息
-          
-          ### 🚀 使用方法
-          
-          1. 下载适合您平台的二进制文件
-          2. 重命名为 `cosp`（Linux/macOS）或 `cosp.exe`（Windows）
-          3. 添加到系统 PATH 中
-          4. 运行 `cosp version` 查看版本信息
-          
-          完整的使用说明请参考 [README.md](https://github.com/bwangelme/cosp/blob/master/README.md)
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Assets
-      if: steps.check_tag.outputs.exists == 'false'
       run: |
-        for file in dist/*; do
-          if [ -f "$file" ]; then
-            echo "Uploading $file..."
-            gh release upload v${{ steps.get_version.outputs.version }} "$file" --clobber
-          fi
-        done
+        gh release create v${{ steps.get_version.outputs.version }} \
+          --title "Release v${{ steps.get_version.outputs.version }}" \
+          --notes "## COSP v${{ steps.get_version.outputs.version }}
+
+        ### 📦 下载
+
+        选择适合您操作系统的二进制文件：
+
+        - **Linux**: \`cosp-v${{ steps.get_version.outputs.version }}-linux-amd64\` (x86_64) 或 \`cosp-v${{ steps.get_version.outputs.version }}-linux-arm64\` (ARM64)
+        - **macOS**: \`cosp-v${{ steps.get_version.outputs.version }}-darwin-amd64\` (Intel) 或 \`cosp-v${{ steps.get_version.outputs.version }}-darwin-arm64\` (Apple Silicon)
+        - **Windows**: \`cosp-v${{ steps.get_version.outputs.version }}-windows-amd64.exe\` (x86_64) 或 \`cosp-v${{ steps.get_version.outputs.version }}-windows-arm64.exe\` (ARM64)
+
+        ### 🔐 安全性
+
+        所有二进制文件的 SHA256 校验和都包含在 \`checksums.txt\` 文件中。
+
+        ### 📋 更新内容
+
+        - 自动构建发布
+        - 支持多平台二进制文件
+        - 包含构建时间和 Git 提交信息
+
+        ### 🚀 使用方法
+
+        1. 下载适合您平台的二进制文件
+        2. 重命名为 \`cosp\`（Linux/macOS）或 \`cosp.exe\`（Windows）
+        3. 添加到系统 PATH 中
+        4. 运行 \`cosp version\` 查看版本信息
+
+        完整的使用说明请参考 [README.md](https://github.com/bwangelme/cosp/blob/master/README.md)" \
+          dist/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
