@@ -14,13 +14,9 @@
 
 ## 安装
 
-### 从源码编译
+### 从 github 下载
 
-```bash
-git clone git@github.com:bwangelme/cosp.git
-cd cosp
-go build -o cosp
-```
+可以从 [Release](https://github.com/bwangelme/cosp/releases) 页面获取对应平台的可执行文件
 
 ### 使用 Go 安装
 
@@ -56,6 +52,10 @@ go install github.com/bwangelme/cosp@latest
    ```
 
 ### 配置说明
+
+可以参考腾讯云文档, 查看如何获取 `secret_id` 和 `secret_key`
+
+https://cloud.tencent.com/document/product/436/7751
 
 - `secret_id`: 腾讯云 API 密钥 ID
 - `secret_key`: 腾讯云 API 密钥 Key
@@ -321,4 +321,4 @@ sudo yum install xclip
 - v1.0.0: 初始版本，支持基本的上传、列表、删除功能
 - 支持剪切板图片上传
 - 支持多平台（macOS、Linux、Windows）
-- 添加文件类型检测和自动重命名功能 
+- 添加文件类型检测和自动重命名功能
