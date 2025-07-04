@@ -13,7 +13,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"cos/pkg"
+	"github.com/bwangelme/cosp/pkg"
 
 	"github.com/spf13/cobra"
 	"github.com/tencentyun/cos-go-sdk-v5"

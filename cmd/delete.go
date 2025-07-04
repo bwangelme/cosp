@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"cos/pkg"
+	"github.com/bwangelme/cosp/pkg"
 
 	"github.com/spf13/cobra"
 )

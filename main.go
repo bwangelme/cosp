@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"cos/cmd"
+	"github.com/bwangelme/cosp/cmd"
 
 	"github.com/spf13/cobra"
 )

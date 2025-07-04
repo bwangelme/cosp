@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"cos/pkg"
+	"github.com/bwangelme/cosp/pkg"
 
 	"github.com/h2non/filetype"
 	"github.com/spf13/cobra"

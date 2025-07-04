@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"cos/pkg"
+	"github.com/bwangelme/cosp/pkg"
 
 	"github.com/atotto/clipboard"
 	"github.com/h2non/filetype"

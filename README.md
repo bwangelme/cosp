@@ -28,6 +28,8 @@ go build -o cosp
 go install github.com/bwangelme/cosp@latest
 ```
 
+**注意**: 确保您的 `$GOPATH/bin` 或 `$HOME/go/bin` 在您的 `$PATH` 中。
+
 ## 配置
 
 在使用前，您需要配置腾讯云 COS 的访问凭证：
