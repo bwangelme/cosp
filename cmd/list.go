@@ -31,11 +31,11 @@ var ListCmd = &cobra.Command{
 	Long: `列出腾讯云 COS bucket 中的文件，支持分页和前缀过滤。
 
 示例:
-  cos list                    # 列出前20个文件
-  cos list --max-keys 50      # 列出前50个文件
-  cos list --prefix images/   # 列出以 "images/" 开头的文件
-  cos list --marker file.txt  # 从指定文件开始列出
-  cos list --marker 10        # 从第10个文件开始列出`,
+  cosp list                    # 列出前20个文件
+  cosp list --max-keys 50      # 列出前50个文件
+  cosp list --prefix images/   # 列出以 "images/" 开头的文件
+  cosp list --marker file.txt  # 从指定文件开始列出
+  cosp list --marker 10        # 从第10个文件开始列出`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// 创建 COS 客户端
 		client, bucketURL, err := pkg.NewClientWithFallback()
@@ -207,7 +207,7 @@ func getFileNameFromTempFile(index int) (string, error) {
 
 	file, err := os.Open(tempFilePath)
 	if err != nil {
-		return "", fmt.Errorf("无法打开临时文件，请先运行 cos list 命令")
+		return "", fmt.Errorf("无法打开临时文件，请先运行 cosp list 命令")
 	}
 	defer file.Close()
 
