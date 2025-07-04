@@ -27,10 +27,7 @@ var PasteCmd = &cobra.Command{
 支持的平台：
 - macOS: 使用 Cmd+Shift+Ctrl+4 截图到剪切板
 - Linux: 使用 xclip 复制图片到剪切板
-- Windows: 降级为 base64 文本方式
-
-Linux 用户可以使用以下命令将图片复制到剪切板：
-  xclip -selection clipboard -t image/png < image.png`,
+- Windows: 降级为 base64 文本方式`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var b []byte
 		var err error

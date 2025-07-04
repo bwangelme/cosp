@@ -1,18 +1,18 @@
 .PHONY: build install
 
-# 编译可执行文件为 cos
+# 编译可执行文件为 cosp
 build:
-	go build -o cos .
+	go build -o cosp .
 
-# 将执行文件 cos 复制到 ~/bin 目录下
+# 将执行文件 cosp 复制到 ~/bin 目录下
 install: build
 	@mkdir -p ~/bin
-	cp cos ~/bin/cos
-	@echo "cos installed to ~/bin/cos"
+	cp cosp ~/bin/cosp
+	@echo "cosp installed to ~/bin/cosp"
 
 # 清理编译生成的文件
 clean:
-	rm -f cos
+	rm -f cosp
 
 # 运行测试
 test:
@@ -25,9 +25,9 @@ fmt:
 # 显示帮助信息
 help:
 	@echo "Available commands:"
-	@echo "  build   - Compile executable as 'cos'"
+	@echo "  build   - Compile executable as 'cosp'"
 	@echo "  install - Install executable to ~/bin"
 	@echo "  clean   - Remove compiled files"
 	@echo "  test    - Run tests"
 	@echo "  fmt     - Format code"
-	@echo "  help    - Show this help message" 
+	@echo "  help    - Show this help message"
