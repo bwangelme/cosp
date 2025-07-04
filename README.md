@@ -5,12 +5,12 @@
 ## 功能特性
 
 - ✅ **文件上传**: 上传本地图片文件到腾讯云 COS
-- ✅ **剪切板上传**: 直接上传剪切板中的图片（支持截图）
+- ✅ **剪切板上传**: 直接上传剪切板中的图片（支持截图和 SVG 文本）
 - ✅ **文件列表**: 列出 COS 中的文件，支持分页和前缀过滤
 - ✅ **文件删除**: 根据文件名删除 COS 中的文件
 - ✅ **多平台支持**: 支持 macOS、Linux 和 Windows
 - ✅ **自动重命名**: 使用时间戳自动生成文件名，避免重名冲突
-- ✅ **文件类型检测**: 仅允许上传图片文件
+- ✅ **文件类型检测**: 仅允许上传图片文件和 SVG 文件
 
 ## 安装
 
@@ -101,11 +101,27 @@ cosp upload /path/to/image.jpg
 cosp paste
 ```
 
+支持的格式：
+- **普通图片格式**：PNG、JPEG、GIF、BMP、TIFF 等
+- **矢量图片格式**：SVG
+
 #### 平台支持
 
-- **macOS**: 使用 `Cmd+Shift+Ctrl+4` 截图到剪切板，然后运行命令
-- **Linux**: 需要安装 `xclip`，使用 `xclip -selection clipboard -t image/png < image.png` 复制图片
-- **Windows**: 支持 base64 文本方式
+- **macOS**: 使用 `Cmd+Shift+Ctrl+4` 截图到剪切板，然后运行命令。也支持复制 SVG 文本内容后运行命令
+- **Linux**: 需要安装 `xclip`，使用 `xclip -selection clipboard -t image/png < image.png` 复制图片。也支持复制 SVG 文本内容后运行命令
+- **Windows**: 支持 base64 文本方式。也支持复制 SVG 文本内容后运行命令
+
+#### SVG 支持说明
+
+工具可以智能识别剪切板中的 SVG 内容：
+1. 复制任何包含 SVG 代码的文本（从网页、编辑器等）
+2. 运行 `cosp paste` 命令
+3. 工具会自动检测 SVG 格式并上传
+
+SVG 检测条件：
+- 包含 `<svg` 标签
+- 包含 SVG 命名空间或 XML 声明
+- 是有效的 SVG 文本内容
 
 ### 4. 列出 COS 中的文件
 
@@ -159,16 +175,28 @@ cosp upload /tmp/image.jpg
 
 **语法**: `cosp paste`
 
+**支持的格式**:
+- **普通图片格式**: PNG、JPEG、GIF、BMP、TIFF 等
+- **矢量图片格式**: SVG
+
 **平台差异**:
-- **macOS**: 自动检测剪切板中的图片数据
-- **Linux**: 需要 `xclip` 工具支持
-- **Windows**: 支持 base64 格式的图片数据
+- **macOS**: 自动检测剪切板中的图片数据，也支持 SVG 文本
+- **Linux**: 需要 `xclip` 工具支持，也支持 SVG 文本
+- **Windows**: 支持 base64 格式的图片数据，也支持 SVG 文本
 
 **示例**:
 ```bash
 # 先截图到剪切板，然后运行
 cosp paste
+
+# 复制 SVG 文本到剪切板，然后运行
+cosp paste
 ```
+
+**SVG 使用说明**:
+1. 从任何地方复制 SVG 代码（网页源码、编辑器等）
+2. 运行 `cosp paste` 命令
+3. 工具会自动识别并上传 SVG 文件
 
 ### `cosp list`
 
