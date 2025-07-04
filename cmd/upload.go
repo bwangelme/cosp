@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"cos/pkg"
 
@@ -42,7 +43,13 @@ var UploadCmd = &cobra.Command{
 			log.Fatalf("创建COS客户端失败: %v", err)
 		}
 
-		objectKey := filepath.Base(filePath)
+		// 获取原文件的扩展名
+		originalExt := filepath.Ext(filePath)
+
+		// 使用时间戳格式生成新的文件名，保留原文件的扩展名
+		timestamp := time.Now().Format("2006-01-02-150405")
+		objectKey := timestamp + originalExt
+
 		_, err = client.Object.Put(context.Background(), objectKey, file, nil)
 		if err != nil {
 			log.Fatalf("上传失败: %v", err)
