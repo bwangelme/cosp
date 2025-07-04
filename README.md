@@ -152,6 +152,34 @@ cosp delete filename.jpg
 cosp delete file1.jpg file2.png file3.gif
 ```
 
+### 6. 调试模式
+
+所有命令都支持 `--debug` 或 `-d` 选项，用于启用调试模式，显示详细的运行信息：
+
+```bash
+# 启用调试模式
+cosp --debug paste
+cosp -d upload image.jpg
+cosp --debug list
+```
+
+调试模式会显示：
+- 剪切板内容检测详情
+- SVG 格式检测过程
+- 腾讯云 COS 连接状态
+- 文件上传进度
+- 错误详细信息
+
+**示例输出**:
+```
+DEBU[2024-01-15 10:30:00] 已启用调试模式
+DEBU[2024-01-15 10:30:00] 读取到剪切板文本内容，长度: 186 字节
+DEBU[2024-01-15 10:30:00] SVG 检测: 开始检测内容，长度: 185
+DEBU[2024-01-15 10:30:00] SVG 检测: <svg 标签存在: true
+DEBU[2024-01-15 10:30:00] SVG 检测: SVG 命名空间存在: true
+DEBU[2024-01-15 10:30:00] SVG 检测: 最终结果: true
+```
+
 ## 命令详细说明
 
 ### `cosp upload`

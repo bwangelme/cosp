@@ -5,9 +5,12 @@ import (
 	"os"
 
 	"github.com/bwangelme/cosp/cmd"
+	logger "github.com/bwangelme/cosp/log"
 
 	"github.com/spf13/cobra"
 )
+
+var debugMode bool
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -27,7 +30,16 @@ func main() {
   cosp paste              # 上传剪切板中的图片
   cosp list               # 列出 COS 中的文件
   cosp delete file.jpg    # 删除指定文件`,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if debugMode {
+				logger.SetDebugLevel()
+				logger.L.Debug("已启用调试模式")
+			}
+		},
 	}
+
+	// 添加全局 debug 选项
+	rootCmd.PersistentFlags().BoolVarP(&debugMode, "debug", "d", false, "启用调试模式，显示详细的调试信息")
 
 	// 添加版本命令
 	var versionCmd = &cobra.Command{
