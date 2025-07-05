@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"bytes"
@@ -35,104 +34,10 @@ var PasteCmd = &cobra.Command{
 - Linux: 使用 xclip 复制图片到剪切板，或复制 SVG 文本
 - Windows: 降级为 base64 文本方式，或复制 SVG 文本`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var b []byte
-		var err error
-		var isSVG bool
-		var fileExtension string
-
-		// 首先尝试读取剪切板的文本内容，检查是否为 SVG
-		textContent, textErr := clipboard.ReadAll()
-		if textErr == nil && len(textContent) > 0 {
-			logger.L.Debugf("读取到剪切板文本内容，长度: %d 字节", len(textContent))
-			logger.L.Debugf("剪切板内容预览: %s", func() string {
-				if len(textContent) > 100 {
-					return textContent[:100] + "..."
-				}
-				return textContent
-			}())
-
-			// 检查是否为 SVG 格式
-			if isSVGContent(textContent) {
-				fmt.Println("✅ 检测到 SVG 格式内容")
-				b = []byte(textContent)
-				isSVG = true
-				fileExtension = "svg"
-			} else {
-				logger.L.Debug("SVG 检测失败，尝试按图片格式处理")
-			}
-		} else {
-			logger.L.Debugf("读取剪切板文本失败: %v", textErr)
-		}
-
-		// 如果不是 SVG，按照原有逻辑处理图片
-		if !isSVG {
-			switch runtime.GOOS {
-			case "darwin":
-				// macOS 下使用 AppleScript 读取图片
-				logger.L.Debug("使用 macOS AppleScript 方式读取剪切板图片")
-				b, err = readImageFromClipboardMacOS()
-				if err != nil {
-					logger.L.Errorf("macOS AppleScript 读取失败: %v", err)
-				}
-
-			case "linux":
-				// Linux 下使用 xclip 读取图片
-				fmt.Println("使用 Linux xclip 读取图片...")
-				logger.L.Debug("使用 Linux xclip 方式读取剪切板图片")
-				b, err = readImageFromClipboardLinux()
-				if err != nil {
-					logger.L.Errorf("Linux xclip 读取失败: %v", err)
-					log.Fatalf("读取剪切板失败: %v", err)
-				}
-
-			default:
-				// 其他平台降级为 base64 或文本
-				fmt.Println("使用通用文本方式读取...")
-				logger.L.Debug("使用通用文本方式处理剪切板内容")
-				if textErr != nil {
-					logger.L.Errorf("通用文本方式读取失败: %v", textErr)
-					log.Fatalf("读取剪切板失败: %v", textErr)
-				}
-
-				// 尝试解析为 base64
-				b, err = base64.StdEncoding.DecodeString(textContent)
-				if err != nil {
-					fmt.Println("内容不是 base64 格式，使用原始文本数据")
-					logger.L.Debug("内容不是 base64 格式，直接使用原始文本数据")
-					// 如果不是 base64，直接使用原始数据
-					b = []byte(textContent)
-				} else {
-					fmt.Println("检测到 base64 格式内容")
-					logger.L.Debug("成功解析 base64 格式内容")
-				}
-			}
-
-			if len(b) == 0 {
-				logger.L.Error("剪切板内容为空")
-				log.Fatalf("剪切板为空")
-			}
-
-			// 验证是否为图片格式
-			if !filetype.IsImage(b) {
-				fmt.Printf("❌ 剪切板内容不是图片格式，内容前 100 字符: %s\n",
-					func() string {
-						if len(textContent) > 100 {
-							return textContent[:100] + "..."
-						}
-						return textContent
-					}())
-				logger.L.Errorf("剪切板内容不是有效的图片格式，数据长度: %d", len(b))
-				log.Fatalf("剪切板内容不是图片或 SVG，仅支持图片和 SVG 上传")
-			}
-
-			// 检测文件类型
-			ext, err := filetype.Get(b)
-			if err != nil {
-				logger.L.Errorf("检测文件类型失败: %v", err)
-				log.Fatalf("检测文件类型失败: %v", err)
-			}
-			fileExtension = ext.Extension
-			logger.L.Debugf("检测到图片格式: %s", fileExtension)
+		b, fileExtension, isSVG, err := getClipboardContent()
+		if err != nil {
+			logger.L.Errorf("读取剪切板失败: %v", err)
+			return
 		}
 
 		logger.L.Debugf("准备上传 %s 文件，数据大小: %d 字节", func() string {
@@ -142,16 +47,13 @@ var PasteCmd = &cobra.Command{
 			return "图片"
 		}(), len(b))
 
-		// 使用新的客户端初始化方式
-		logger.L.Debug("开始初始化腾讯云 COS 客户端")
 		client, bucketURL, err := pkg.NewClientWithFallback()
 		if err != nil {
 			logger.L.Errorf("创建 COS 客户端失败: %v", err)
-			log.Fatalf("创建COS客户端失败: %v", err)
+			return
 		}
 		logger.L.Debugf("成功连接到 COS，bucket URL: %s", bucketURL)
 
-		// 使用时间戳格式生成文件名
 		timestamp := time.Now().Format("2006-01-02-150405")
 		objectKey := fmt.Sprintf("%s.%s", timestamp, fileExtension)
 		logger.L.Debugf("生成文件名: %s，准备开始上传", objectKey)
@@ -159,11 +61,100 @@ var PasteCmd = &cobra.Command{
 		_, err = client.Object.Put(context.Background(), objectKey, bytes.NewReader(b), nil)
 		if err != nil {
 			logger.L.Errorf("上传到 COS 失败: %v", err)
-			log.Fatalf("上传失败: %v", err)
+			return
 		}
 		fmt.Printf("✅ 上传成功: %s/%s\n", bucketURL, objectKey)
 		logger.L.Debugf("成功上传文件: %s/%s，文件大小: %d 字节", bucketURL, objectKey, len(b))
 	},
+}
+
+func getClipboardContent() ([]byte, string, bool, error) {
+	textContent, textErr := clipboard.ReadAll()
+	if textErr == nil && len(textContent) > 0 {
+		logger.L.Debugf("读取到剪切板文本内容，长度: %d 字节", len(textContent))
+		logger.L.Debugf("剪切板内容预览: %s", previewText(textContent))
+		if isSVGContent(textContent) {
+			fmt.Println("✅ 检测到 SVG 格式内容")
+			return []byte(textContent), "svg", true, nil
+		}
+		logger.L.Debug("SVG 检测失败，尝试按图片格式处理")
+	} else {
+		logger.L.Debugf("读取剪切板文本失败: %v", textErr)
+	}
+
+	switch runtime.GOOS {
+	case "darwin":
+		return getImageFromMacOS()
+	case "linux":
+		return getImageFromLinux()
+	default:
+		return getImageFromOther(textContent, textErr)
+	}
+}
+
+func previewText(text string) string {
+	if len(text) > 100 {
+		return text[:100] + "..."
+	}
+	return text
+}
+
+func getImageFromMacOS() ([]byte, string, bool, error) {
+	logger.L.Debug("使用 macOS AppleScript 方式读取剪切板图片")
+	b, err := readImageFromClipboardMacOS()
+	if err != nil {
+		logger.L.Errorf("macOS AppleScript 读取失败: %v", err)
+		return nil, "", false, err
+	}
+	return checkImageType(b)
+}
+
+func getImageFromLinux() ([]byte, string, bool, error) {
+	fmt.Println("使用 Linux xclip 读取图片...")
+	logger.L.Debug("使用 Linux xclip 方式读取剪切板图片")
+	b, err := readImageFromClipboardLinux()
+	if err != nil {
+		logger.L.Errorf("Linux xclip 读取失败: %v", err)
+		return nil, "", false, err
+	}
+	return checkImageType(b)
+}
+
+func getImageFromOther(textContent string, textErr error) ([]byte, string, bool, error) {
+	fmt.Println("使用通用文本方式读取...")
+	logger.L.Debug("使用通用文本方式处理剪切板内容")
+	if textErr != nil {
+		logger.L.Errorf("通用文本方式读取失败: %v", textErr)
+		return nil, "", false, textErr
+	}
+	b, err := base64.StdEncoding.DecodeString(textContent)
+	if err != nil {
+		fmt.Println("内容不是 base64 格式，使用原始文本数据")
+		logger.L.Debug("内容不是 base64 格式，直接使用原始文本数据")
+		b = []byte(textContent)
+	} else {
+		fmt.Println("检测到 base64 格式内容")
+		logger.L.Debug("成功解析 base64 格式内容")
+	}
+	return checkImageType(b)
+}
+
+func checkImageType(b []byte) ([]byte, string, bool, error) {
+	if len(b) == 0 {
+		logger.L.Error("剪切板内容为空")
+		return nil, "", false, fmt.Errorf("剪切板为空")
+	}
+	if !filetype.IsImage(b) {
+		logger.L.Errorf("剪切板内容不是有效的图片格式，数据长度: %d", len(b))
+		return nil, "", false, fmt.Errorf("剪切板内容不是图片或 SVG，仅支持图片和 SVG 上传")
+	}
+	ext, err := filetype.Get(b)
+	if err != nil {
+		logger.L.Errorf("检测文件类型失败: %v", err)
+		return nil, "", false, fmt.Errorf("检测文件类型失败: %v", err)
+	}
+	logger.L.Debugf("检测到图片格式: %s", ext.Extension)
+	return b, ext.Extension, false, nil
 }
 
 // isSVGContent 检查文本内容是否为 SVG 格式
